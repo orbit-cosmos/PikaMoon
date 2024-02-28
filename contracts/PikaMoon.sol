@@ -23,6 +23,7 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
     uint16 public marketingTax = 10; // 1%
     uint16 public ecosystemTax = 10; // 1%
     uint16 public burnTax = 5; // 0.5%
+    uint32 public feeMultiply = 1000;
     bool public isTaxEnabled = true;
 
     /**
@@ -59,32 +60,18 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
 
 
 
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
-            0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
-        );
-        // set the rest of the contract variables
-        uniswapV2Router = _uniswapV2Router;
-        // Create a uniswap pair for this new token
-        uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());
+        // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
+        //     0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
+        // );
+        // // set the rest of the contract variables
+        // uniswapV2Router = _uniswapV2Router;
+        // // Create a uniswap pair for this new token
+        // uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
+        //     .createPair(address(this), _uniswapV2Router.WETH());
 
     }
 
-    // /**
-    //  * @dev Function for initializing uniswap router and create pair.
-    //  * @param _router address of router.
-    //  */
-    // function initRouterAndPair(address _router) external onlyRole(OWNER_ROLE) {
-    //     IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
-    //         // 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
-    //         _router
-    //     );
-    //     // set the rest of the contract variables
-    //     uniswapV2Router = _uniswapV2Router;
-    //     // Create a uniswap pair for this new token
-    //     uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-    //         .createPair(address(this), _uniswapV2Router.WETH());
-    // }
+   
 
     /**
      * @dev Function to get decimals.
@@ -112,7 +99,18 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         // Call the internal _burn function from ERC20 to destroy tokens
         _burn(owner, amount);
     }
-
+    /**
+     * @dev Function to change fee Multiply
+     * @param _feeMultiply The address to ecosystem wallet.
+     */
+    function changeFeeMultiply(
+        uint32 _feeMultiply
+    ) external onlyRole(OWNER_ROLE) {
+        if (_feeMultiply == 0) {
+            revert CommanErrors.ZeroAmount();
+        }
+         feeMultiply = _feeMultiply;
+    }
     /**
      * @dev Function to set ecosystem address.
      * @param _ecoSystemWallet The address to ecosystem wallet.
@@ -280,9 +278,9 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
     {
         // calculate tax
         if (isTaxEnabled && !(isExcludeFromTax[from] || isExcludeFromTax[to])) {
-            burnAmount = (value * burnTax) / 1000;
-            marketingAmount = (value * marketingTax) / 1000;
-            ecosystemAmount = (value * ecosystemTax) / 1000;
+            burnAmount = (value * burnTax) / feeMultiply;
+            marketingAmount = (value * marketingTax) / feeMultiply;
+            ecosystemAmount = (value * ecosystemTax) / feeMultiply;
             unchecked {
                 tax = burnAmount + marketingAmount + ecosystemAmount;
             }

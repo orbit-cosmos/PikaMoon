@@ -136,13 +136,18 @@ describe("Pikamoon token", function () {
         .withArgs(otherAccount.address, ZeroAddress, toWei(5));
       expect(await token.balanceOf(otherAccount.address)).to.be.equal(bal-toWei(5));
     });
+    it("should allow change fee Multiply", async () => {
+      expect(await token.feeMultiply()).to.be.equal(1000);
+      await token.changeFeeMultiply(10000)
+      expect(await token.feeMultiply()).to.be.equal(10000);
+    });
     it("should calculate tax correctly",async () => {
       await token.toggleTax();
       await token.excludeFromTax(otherAccount.address, false);
       let value = toWei(500)
-      let burnAmount = (value * (await token.burnTax())) / BigInt(1000);
-      let marketingAmount = (value * await token.marketingTax()) / BigInt(1000);
-      let ecosystemAmount = (value * await token.ecosystemTax()) / BigInt(1000);
+      let burnAmount = (value * (await token.burnTax())) / await token.feeMultiply();
+      let marketingAmount = (value * await token.marketingTax()) / await token.feeMultiply();
+      let ecosystemAmount = (value * await token.ecosystemTax()) / await token.feeMultiply();
       let taxAmount = burnAmount + marketingAmount + ecosystemAmount;
       let tax = await token
       .calculateTax(otherAccount.address, owner.address,toWei(500));
