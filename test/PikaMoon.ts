@@ -49,16 +49,16 @@ describe("Pikamoon token", function () {
     it("should be equal to decimal 9", async () => {
       expect(await token.decimals()).to.be.equal(9);
     });
-    it("should initialize Router And Pair", async () => {
-      expect(await token.uniswapV2Pair()).to.be.equal(ZeroAddress);
-      expect(await token.uniswapV2Router()).to.be.equal(ZeroAddress);
-      await token.initRouterAndPair(
-        "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-      );
-      expect(await token.uniswapV2Router()).to.be.equal(
-        "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-      );
-    });
+    // it("should initialize Router And Pair", async () => {
+    //   expect(await token.uniswapV2Pair()).to.be.equal(ZeroAddress);
+    //   expect(await token.uniswapV2Router()).to.be.equal(ZeroAddress);
+    //   await token.initRouterAndPair(
+    //     "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+    //   );
+    //   expect(await token.uniswapV2Router()).to.be.equal(
+    //     "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+    //   );
+    // });
     it("should change marketing wallet", async () => {
       expect(await token.marketingWallet()).to.be.equal(owner.address);
       await token.changeMarketingWallet(account2.address);
@@ -76,7 +76,7 @@ describe("Pikamoon token", function () {
       ).to.emit(token, "Transfer");
       let tax = await token
       .connect(otherAccount)
-      .calculateTax(otherAccount.address, toWei(500));
+      .calculateTax(otherAccount.address, owner.address,toWei(500));
       expect(await token.balanceOf(owner.address)).to.be.equal(
         toWei(500) - tax[0]
       );
@@ -94,7 +94,7 @@ describe("Pikamoon token", function () {
         token.transferFrom(otherAccount.address, owner.address, toWei(500))
       ).to.emit(token, "Transfer");
       let tax = await token
-      .calculateTax(otherAccount.address, toWei(500));
+      .calculateTax(otherAccount.address, owner.address,toWei(500));
       expect(await token.balanceOf(owner.address)).to.be.equal(
         bal + toWei(500) - tax[0]
       );
@@ -145,13 +145,13 @@ describe("Pikamoon token", function () {
       let ecosystemAmount = (value * await token.ecosystemTax()) / BigInt(1000);
       let taxAmount = burnAmount + marketingAmount + ecosystemAmount;
       let tax = await token
-      .calculateTax(otherAccount.address, toWei(500));
+      .calculateTax(otherAccount.address, owner.address,toWei(500));
       expect(tax[0]).to.be.eq(taxAmount)
       
       await token.excludeFromTax(otherAccount.address, true);
       tax = await token
       .connect(otherAccount)
-      .calculateTax(otherAccount.address, toWei(500));
+      .calculateTax(otherAccount.address, owner.address,toWei(500));
       expect(tax[0]).to.be.eq(0)
     })
   });

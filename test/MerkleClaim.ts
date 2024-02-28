@@ -87,7 +87,7 @@ describe("Check if merkle root is working", function () {
       await expect(
         claimPika.connect(addr1).claimBonusPika(toWei(2), proof),
       ).to.be.revertedWith("already claimed");
-      let tax = await token.calculateTax(owner.address, toWei(2));
+      let tax = await token.calculateTax(owner.address, claimPika.target,toWei(2));
 
       expect(await token.balanceOf(addr1.address)).to.be.equal(
         toWei(2) - tax[0],
