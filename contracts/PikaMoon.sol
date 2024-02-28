@@ -209,13 +209,13 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
             // deduct tax
             if(marketingAmount > 0){
 
-            _transfer(_msgSender(), marketingWallet, marketingAmount);
+            super._transfer(_msgSender(), marketingWallet, marketingAmount);
             }
             if(marketingAmount > 0){
-            _transfer(_msgSender(), ecoSystemWallet, ecosystemAmount);
+            super._transfer(_msgSender(), ecoSystemWallet, ecosystemAmount);
             }
             if(burnAmount > 0){
-            _burn(_msgSender(), burnAmount);
+            super._burn(_msgSender(), burnAmount);
             }
         }
         // normal transfer
@@ -256,17 +256,17 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
                // deduct tax
             if(marketingAmount > 0){
 
-            _transfer(from, marketingWallet, marketingAmount);
+            super._transfer(from, marketingWallet, marketingAmount);
             }
             if(marketingAmount > 0){
-            _transfer(from, ecoSystemWallet, ecosystemAmount);
+            super._transfer(from, ecoSystemWallet, ecosystemAmount);
             }
             if(burnAmount > 0){
-            _burn(from, burnAmount);
+            super._burn(from, burnAmount);
             }
         }
         // normal transfer
-        _transfer(from, to, value);
+        super._transfer(from, to, value);
         return true;
     }
 
