@@ -9,6 +9,8 @@ import "hardhat-gas-reporter";
 import "hardhat-contract-sizer";
 import "@nomiclabs/hardhat-solhint";
 import "@nomicfoundation/hardhat-foundry";
+import "@openzeppelin/hardhat-upgrades";
+import "hardhat-deploy"
 const alchemyKey = process.env.ALCHEMY_KEY;
 const pk = process.env.PK;
 

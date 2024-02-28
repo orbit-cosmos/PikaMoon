@@ -18,4 +18,11 @@ npx hardhat test
 forge test -vvv 
 npx hardhat run scripts/deployStaking.js --network sepolia
 npx hardhat --help
+
 ```
+
+# sepolia
+# proxy address 
+0x15E62F520B728ED13DD771Dc182b861eCc7f8342
+# implementation
+0x2c879efAdFa4c6E87BEbF629AB68152452b03d73

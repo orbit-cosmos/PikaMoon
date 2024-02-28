@@ -20,4 +20,5 @@ library CommanErrors {
     error WrongUnStakeAmount();
     error WrongEndTime();
     error CanNotUpdateAtTheMoment();
+    error PairIsAlreadyGivenValue();
 }

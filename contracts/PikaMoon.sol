@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import {ERC20Capped} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
-// import "hardhat/console.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {IPikaMoon, IERC20} from "./interfaces/IPikaMoon.sol";
 import {CommanErrors} from "./libraries/Errors.sol";
 import "./interfaces/IUniswapV2Router02.sol";
@@ -13,39 +15,62 @@ import "./interfaces/IUniswapV2Router02.sol";
  * @title PikaMoon Token
  * @dev A simple ERC20 token contract that allows minting and burning of tokens.
  */
-contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
+contract PikaMoon is
+    Initializable,
+    ERC20CappedUpgradeable,
+    AccessControlUpgradeable,
+    UUPSUpgradeable
+{
+    //storage
     bytes32 private constant OWNER_ROLE = keccak256("OWNER_ROLE");
     address public ecoSystemWallet;
     address public marketingWallet;
     address public uniswapV2Pair;
-    IUniswapV2Router02 public uniswapV2Router;
     mapping(address => bool) public isExcludeFromTax;
-    uint16 public marketingTax = 10; // 1%
-    uint16 public ecosystemTax = 10; // 1%
-    uint16 public burnTax = 5; // 0.5%
-    uint32 public feeMultiply = 1000;
-    bool public isTaxEnabled = true;
+    mapping(address => bool) public automatedMarketMakerPairs;
+    uint16 public marketingTax; // 1%
+    uint16 public ecosystemTax; // 1%
+    uint16 public burnTax; // 0.5%
+    uint32 public feeMultiply;
+    bool public isTaxEnabled;
 
-    /**
-     * @dev Constructor function to initialize the contract.
-     * @param _name The name of the token.
-     * @param _symbol The symbol of the token.
-     * @param _cap Cap of token.
-     * @param _ecosystemdevelopment ecosystem wallet.
-     * @param _marketing marketing wallet.
-     */
-    constructor(
+    // events
+    event SetAutomatedMarketMakerPair(address pair, bool value);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    // /**
+    //  * @dev Initializer function to initialize the contract.
+    //  * @param _name The name of the token.
+    //  * @param _symbol The symbol of the token.
+    //  * @param _cap Cap of token.
+    //  * @param _ecosystemdevelopment ecosystem wallet.
+    //  * @param _marketing marketing wallet.
+    //  */
+    function initialize(
         string memory _name, // Pikamoon
         string memory _symbol, // PIKA
         uint _cap, // 50_000_000_000 ether
-        address _ecosystemdevelopment, 
+        address _ecosystemdevelopment,
         address _marketing
-    ) ERC20(_name, _symbol) ERC20Capped(_cap) {
-        // grant deployer as  admin role
+    ) public initializer {
+        __ERC20_init(_name, _symbol);
+        __ERC20Capped_init(_cap);
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+
         _grantRole(OWNER_ROLE, _msgSender());
-        //set owner role to default admin role
         _setRoleAdmin(OWNER_ROLE, OWNER_ROLE);
-        // check for zero adderss
+
+        marketingTax = 10; // 1%
+        ecosystemTax = 10; // 1%
+        burnTax = 5; // 0.5%
+        feeMultiply = 1000;
+        isTaxEnabled = true;
+
         if (_ecosystemdevelopment == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
@@ -57,21 +82,32 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         marketingWallet = _marketing;
         // exclude owner & this contract from tax
         isExcludeFromTax[address(this)] = true;
-
-
-
-        // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(
-        //     0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D
-        // );
-        // // set the rest of the contract variables
-        // uniswapV2Router = _uniswapV2Router;
-        // // Create a uniswap pair for this new token
-        // uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-        //     .createPair(address(this), _uniswapV2Router.WETH());
-
     }
 
-   
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyRole(OWNER_ROLE) {}
+
+    function setAutomatedMarketMakerPair(
+        address pair,
+        bool value
+    ) public onlyRole(OWNER_ROLE) {
+        _setAutomatedMarketMakerPair(pair, value);
+    }
+
+    /**
+     * @dev function for setting Automated MarketMaker Pair
+     * @param pair address for pair.
+     * @param value boolean true or false.
+     */
+    function _setAutomatedMarketMakerPair(address pair, bool value) private {
+        if (automatedMarketMakerPairs[pair] == value) {
+            revert CommanErrors.PairIsAlreadyGivenValue();
+        }
+
+        automatedMarketMakerPairs[pair] = value;
+        emit SetAutomatedMarketMakerPair(pair, value);
+    }
 
     /**
      * @dev Function to get decimals.
@@ -99,6 +135,7 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         // Call the internal _burn function from ERC20 to destroy tokens
         _burn(owner, amount);
     }
+
     /**
      * @dev Function to change fee Multiply
      * @param _feeMultiply The address to ecosystem wallet.
@@ -109,8 +146,9 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         if (_feeMultiply == 0) {
             revert CommanErrors.ZeroAmount();
         }
-         feeMultiply = _feeMultiply;
+        feeMultiply = _feeMultiply;
     }
+
     /**
      * @dev Function to set ecosystem address.
      * @param _ecoSystemWallet The address to ecosystem wallet.
@@ -121,7 +159,7 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         if (_ecoSystemWallet == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
-         ecoSystemWallet = _ecoSystemWallet;
+        ecoSystemWallet = _ecoSystemWallet;
     }
 
     /**
@@ -134,7 +172,7 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         if (_marketing == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
-       marketingWallet=_marketing;
+        marketingWallet = _marketing;
     }
 
     /**
@@ -142,15 +180,18 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
      * @param _user The address to be exclude or include From Tax
      * @param _isExcludeFromTax true or false
      */
-    function excludeFromTax(address _user, bool _isExcludeFromTax) external  onlyRole(OWNER_ROLE) {
-         isExcludeFromTax[_user] = _isExcludeFromTax;
+    function excludeFromTax(
+        address _user,
+        bool _isExcludeFromTax
+    ) external onlyRole(OWNER_ROLE) {
+        isExcludeFromTax[_user] = _isExcludeFromTax;
     }
 
     /**
      * @dev Function to toggle tax
      */
-    function toggleTax() external  onlyRole(OWNER_ROLE) {
-      isTaxEnabled = !isTaxEnabled;
+    function toggleTax() external onlyRole(OWNER_ROLE) {
+        isTaxEnabled = !isTaxEnabled;
     }
 
     /**
@@ -178,7 +219,7 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
      * @param _burnTax tax value
      */
     function setBurnTax(uint16 _burnTax) external onlyRole(OWNER_ROLE) {
-       burnTax = _burnTax; 
+        burnTax = _burnTax;
     }
 
     /**
@@ -194,32 +235,31 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
     function transfer(
         address to,
         uint256 value
-    ) public override(ERC20, IERC20) returns (bool) {
+    ) public override(ERC20Upgradeable) returns (bool) {
         (
             uint256 tax,
             uint256 burnAmount,
             uint256 marketingAmount,
             uint256 ecosystemAmount
-        ) = calculateTax(_msgSender(),to, value);
+        ) = calculateTax(_msgSender(), to, value);
         if (tax > 0) {
             unchecked {
                 value -= tax;
             }
 
             // deduct tax
-            if(marketingAmount > 0){
-
-            super._transfer(_msgSender(), marketingWallet, marketingAmount);
+            if (marketingAmount > 0) {
+                super._transfer(_msgSender(), marketingWallet, marketingAmount);
             }
-            if(marketingAmount > 0){
-            super._transfer(_msgSender(), ecoSystemWallet, ecosystemAmount);
+            if (marketingAmount > 0) {
+                super._transfer(_msgSender(), ecoSystemWallet, ecosystemAmount);
             }
-            if(burnAmount > 0){
-            super._burn(_msgSender(), burnAmount);
+            if (burnAmount > 0) {
+                super._burn(_msgSender(), burnAmount);
             }
         }
         // normal transfer
-        super.transfer(to, value);
+        super._transfer(_msgSender(), to, value);
         return true;
     }
 
@@ -240,29 +280,28 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         address from,
         address to,
         uint256 value
-    ) public override(ERC20, IERC20) returns (bool) {
+    ) public override(ERC20Upgradeable) returns (bool) {
         _spendAllowance(from, _msgSender(), value);
         (
             uint256 tax,
             uint256 burnAmount,
             uint256 marketingAmount,
             uint256 ecosystemAmount
-        ) = calculateTax(_msgSender(),to, value);
+        ) = calculateTax(from, to, value);
         if (tax > 0) {
             unchecked {
                 value -= tax;
             }
 
-               // deduct tax
-            if(marketingAmount > 0){
-
-            super._transfer(from, marketingWallet, marketingAmount);
+            // deduct tax
+            if (marketingAmount > 0) {
+                super._transfer(from, marketingWallet, marketingAmount);
             }
-            if(marketingAmount > 0){
-            super._transfer(from, ecoSystemWallet, ecosystemAmount);
+            if (marketingAmount > 0) {
+                super._transfer(from, ecoSystemWallet, ecosystemAmount);
             }
-            if(burnAmount > 0){
-            super._burn(from, burnAmount);
+            if (burnAmount > 0) {
+                super._burn(from, burnAmount);
             }
         }
         // normal transfer
@@ -291,14 +330,23 @@ contract PikaMoon is ERC20Capped, AccessControl, IPikaMoon {
         )
     {
         // calculate tax
-        if (isTaxEnabled && !(isExcludeFromTax[from] || isExcludeFromTax[to])) {
-            burnAmount = (value * burnTax) / feeMultiply;
-            marketingAmount = (value * marketingTax) / feeMultiply;
-            ecosystemAmount = (value * ecosystemTax) / feeMultiply;
-            unchecked {
-                tax = burnAmount + marketingAmount + ecosystemAmount;
+        if (isTaxEnabled) {
+            if (automatedMarketMakerPairs[from]) {
+                // means buying from known AMM/DEX
+                tax = 0;
+            } else {
+                if (isExcludeFromTax[from] || isExcludeFromTax[to]) {
+                    // means from or to is excluded from fee
+                    tax = 0;
+                } else {
+                    burnAmount = (value * burnTax) / feeMultiply;
+                    marketingAmount = (value * marketingTax) / feeMultiply;
+                    ecosystemAmount = (value * ecosystemTax) / feeMultiply;
+                    unchecked {
+                        tax = burnAmount + marketingAmount + ecosystemAmount;
+                    }
+                }
             }
         }
     }
-  
 }

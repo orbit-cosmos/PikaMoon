@@ -1,6 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
-import { ethers } from "hardhat";
+import { ethers,upgrades } from "hardhat";
 import { PikaMoon } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
@@ -14,12 +14,16 @@ describe("Pikamoon token", function () {
     const [owner, otherAccount, account2, account3] = await ethers.getSigners();
     const pikamoon = await ethers.getContractFactory("PikaMoon");
 
-    const token = await pikamoon.deploy(
+    const token = await upgrades.deployProxy(pikamoon,
+      [
       "PIKAMoon",
       "PIKA",
       toWei(50_000_000_000),
       owner.address,
       owner.address
+      ],
+      { initializer: "initialize"}
+      
     );
     await token.mint(otherAccount.address, toWei(5000));
     return { token, owner, otherAccount, account2, account3 };
