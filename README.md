@@ -16,7 +16,7 @@ npx hardhat flatten
 npx hardhat verify   
 npx hardhat test
 forge test -vvv 
-npx hardhat run scripts/deployStaking.js --network sepolia
+npx hardhat run scripts/deployToken.js --network sepolia
 npx hardhat --help
 
 ```

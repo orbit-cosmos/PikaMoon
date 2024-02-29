@@ -1,11 +1,13 @@
 {
-  "name": "pikamoon-staking",
+  "name": "pikamoon-token",
   "version": "1.0.0",
   "author": "Asadullah Khan <asadullah.khan@tigercrypto.uk>",
+  "contributors": [
+    {"name":"Muhammad Sheikh Wasif","email":"muhammad.wasif@tigercrypto.uk"}
+  ],
   "license": "MIT",
-  "description": "This project is about staking smart contract for pikamoon token",
+  "description": "This project is about smart contract for pikamoon token",
   "keywords": [
-    "staking",
     "defi",
     "erc20",
     "solidity",
@@ -14,7 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://bitbucket.org/orbitcosmos/pikamoon-staking"
+    "url": "https://github.com/orbit-cosmos/PikaMoon"
   },
   "scripts": {
     "preinstall": "npx only-allow yarn",
