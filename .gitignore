@@ -9,3 +9,5 @@ typechain-types
 cache
 out
 cache_forge
+.deploys
+.openzeppelin
