@@ -42,14 +42,14 @@ contract PikaMoon is
         _disableInitializers();
     }
 
-    // /**
-    //  * @dev Initializer function to initialize the contract.
-    //  * @param _name The name of the token.
-    //  * @param _symbol The symbol of the token.
-    //  * @param _cap Cap of token.
-    //  * @param _ecosystemdevelopment ecosystem wallet.
-    //  * @param _marketing marketing wallet.
-    //  */
+    /**
+     * @dev Initializer function to initialize the contract.
+     * @param _name The name of the token.
+     * @param _symbol The symbol of the token.
+     * @param _cap Cap of token.
+     * @param _ecosystemdevelopment ecosystem wallet.
+     * @param _marketing marketing wallet.
+     */
     function initialize(
         string memory _name, // Pikamoon
         string memory _symbol, // PIKA
@@ -84,10 +84,19 @@ contract PikaMoon is
         isExcludeFromTax[address(this)] = true;
     }
 
+    /**
+     * @dev Function that should revert when `msg.sender` is not authorized to upgrade the contract. Called by
+     * {upgradeToAndCall}.
+     */
     function _authorizeUpgrade(
         address newImplementation
     ) internal override onlyRole(OWNER_ROLE) {}
 
+    /**
+     * @dev function for setting Automated MarketMaker Pair
+     * @param pair address for pair.
+     * @param value boolean true or false.
+     */
     function setAutomatedMarketMakerPair(
         address pair,
         bool value
@@ -96,7 +105,7 @@ contract PikaMoon is
     }
 
     /**
-     * @dev function for setting Automated MarketMaker Pair
+     * @dev private function for setting Automated MarketMaker Pair
      * @param pair address for pair.
      * @param value boolean true or false.
      */

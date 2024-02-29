@@ -53,16 +53,12 @@ describe("Pikamoon token", function () {
     it("should be equal to decimal 9", async () => {
       expect(await token.decimals()).to.be.equal(9);
     });
-    // it("should initialize Router And Pair", async () => {
-    //   expect(await token.uniswapV2Pair()).to.be.equal(ZeroAddress);
-    //   expect(await token.uniswapV2Router()).to.be.equal(ZeroAddress);
-    //   await token.initRouterAndPair(
-    //     "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-    //   );
-    //   expect(await token.uniswapV2Router()).to.be.equal(
-    //     "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
-    //   );
-    // });
+    it("should check name", async () => {
+      expect(await token.name()).to.be.equal("PIKAMoon");
+    });
+    it("should check symbol", async () => {
+      expect(await token.symbol()).to.be.equal("PIKA");
+    });
     it("should change marketing wallet", async () => {
       expect(await token.marketingWallet()).to.be.equal(owner.address);
       await token.changeMarketingWallet(account2.address);
