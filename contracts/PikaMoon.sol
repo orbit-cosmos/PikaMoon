@@ -25,7 +25,6 @@ contract PikaMoon is
     bytes32 private constant OWNER_ROLE = keccak256("OWNER_ROLE");
     address public ecoSystemWallet;
     address public marketingWallet;
-    address public uniswapV2Pair;
     mapping(address => bool) public isExcludeFromTax;
     mapping(address => bool) public automatedMarketMakerPairs;
     uint16 public marketingTax; // 1%
@@ -260,7 +259,7 @@ contract PikaMoon is
             if (marketingAmount > 0) {
                 super._transfer(_msgSender(), marketingWallet, marketingAmount);
             }
-            if (marketingAmount > 0) {
+            if (ecosystemAmount > 0) {
                 super._transfer(_msgSender(), ecoSystemWallet, ecosystemAmount);
             }
             if (burnAmount > 0) {
@@ -306,7 +305,7 @@ contract PikaMoon is
             if (marketingAmount > 0) {
                 super._transfer(from, marketingWallet, marketingAmount);
             }
-            if (marketingAmount > 0) {
+            if (ecosystemAmount > 0) {
                 super._transfer(from, ecoSystemWallet, ecosystemAmount);
             }
             if (burnAmount > 0) {
