@@ -23,9 +23,3 @@ npx hardhat --help
 
 # Link to documentation
 https://docs.pikamoon.io/introduction/pikanomics
-
-# Deployed on Sepolia testnet
-## proxy address 
-0x15E62F520B728ED13DD771Dc182b861eCc7f8342
-## implementation
-0x2c879efAdFa4c6E87BEbF629AB68152452b03d73

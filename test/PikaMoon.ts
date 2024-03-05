@@ -44,13 +44,19 @@ describe("Pikamoon token", function () {
       account2 = fixture?.account2;
       account3 = fixture?.account3;
     });
+    it("should not allow minting", async () => {
+      await expect(token.connect(account2).mint(account2.address,1000)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
 
+    });
     it("should allow minting", async () => {
       let bal = await token.balanceOf(otherAccount.address)
+      await expect(token.connect(account2).mint(account2.address,1000)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+
       await token.mint(otherAccount.address, toWei(5000));
       expect(await token.balanceOf(otherAccount.address)).to.be.equal(bal+toWei(5000));
     });
     it("should be equal to decimal 9", async () => {
+
       expect(await token.decimals()).to.be.equal(9);
     });
     it("should check name", async () => {
@@ -58,19 +64,34 @@ describe("Pikamoon token", function () {
     });
     it("should check symbol", async () => {
       expect(await token.symbol()).to.be.equal("PIKA");
+    }); 
+    it("should not allow change marketing wallet", async () => {
+      await expect(token.connect(account2).changeMarketingWallet(account2.address)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+    });
+    it("should not allow change ecosystem wallet", async () => {
+      await expect(token.connect(account2).changeEcoSystemWallet(account2.address)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
     });
     it("should change marketing wallet", async () => {
       expect(await token.marketingWallet()).to.be.equal(owner.address);
-      await token.changeMarketingWallet(account2.address);
+
+     await token.changeMarketingWallet(account2.address);
       expect(await token.marketingWallet()).to.be.equal(account2.address);
     });
     it("should change ecosystem wallet", async () => {
       expect(await token.ecoSystemWallet()).to.be.equal(owner.address);
+   
       await token.changeEcoSystemWallet(account3.address);
       expect(await token.ecoSystemWallet()).to.be.equal(account3.address);
     });
     it("should allow transfer", async () => {
       expect(await token.balanceOf(owner.address)).to.be.equal(0);
+     
+     
+      await expect(
+        token.connect(account3).transfer(owner.address, toWei(500))
+      ).to.be.reverted
+
+     
       await expect(
         token.connect(otherAccount).transfer(owner.address, toWei(500))
       ).to.emit(token, "Transfer");
@@ -108,38 +129,38 @@ describe("Pikamoon token", function () {
         true
       );
     });
+    it("should not allow excluding from tax", async () => {
+     
+      await expect(token.connect(account2).excludeFromTax(otherAccount.address, true)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+     
+    });
     it("should toggle tax", async () => {
       expect(await token.isTaxEnabled()).to.be.equal(true);
       await token.toggleTax();
       expect(await token.isTaxEnabled()).to.be.equal(false);
     });
-    it("should set marketing tx %", async () => {
-      expect(await token.marketingTax()).to.be.equal(10);
 
-      await token.setMarketingTax(20);
-      expect(await token.marketingTax()).to.be.equal(20);
+    it("should set Automated MarketMaker Pair", async () => {
+      await token.setAutomatedMarketMakerPair(owner.address,true);
+      await expect(token.setAutomatedMarketMakerPair(owner.address,true)).to.be.revertedWithCustomError(token,"PairIsAlreadyGivenValue")
+     
     });
-    it("should set eco system tax %", async () => {
-      expect(await token.ecosystemTax()).to.be.equal(10);
-      await token.setEcoSystemTax(30);
-      expect(await token.ecosystemTax()).to.be.equal(30);
+    it("should not allow set Automated MarketMaker Pair", async () => {
+      await expect(token.connect(account2).setAutomatedMarketMakerPair(owner.address,true)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+     
     });
-    it("should set burn tax %", async () => {
-      expect(await token.burnTax()).to.be.equal(5);
-      await token.setBurnTax(10);
-      expect(await token.burnTax()).to.be.equal(10);
+
+    it("should not allow toggle tax", async () => {
+      await expect(token.connect(account2).toggleTax()).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+     
     });
+
     it("should allow burning", async () => {
-      let bal = await token.balanceOf(otherAccount.address)
-      await expect(token.burn(otherAccount.address, toWei(5)))
+      let bal = await token.balanceOf(owner.address)
+      await expect(token.burn(toWei(5)))
         .to.emit(token, "Transfer")
-        .withArgs(otherAccount.address, ZeroAddress, toWei(5));
-      expect(await token.balanceOf(otherAccount.address)).to.be.equal(bal-toWei(5));
-    });
-    it("should allow change fee Multiply", async () => {
-      expect(await token.feeMultiply()).to.be.equal(1000);
-      await token.changeFeeMultiply(10000)
-      expect(await token.feeMultiply()).to.be.equal(10000);
+        .withArgs(owner.address, ZeroAddress, toWei(5));
+      expect(await token.balanceOf(owner.address)).to.be.equal(bal-toWei(5));
     });
     it("should calculate tax correctly",async () => {
       await token.toggleTax();
@@ -153,8 +174,14 @@ describe("Pikamoon token", function () {
       .calculateTax(otherAccount.address, owner.address,toWei(500));
       expect(tax[0]).to.be.eq(taxAmount)
       
+    
+    })
+
+
+
+    it("should not calculate tax if excluded",async()=>{
       await token.excludeFromTax(otherAccount.address, true);
-      tax = await token
+      let tax = await token
       .connect(otherAccount)
       .calculateTax(otherAccount.address, owner.address,toWei(500));
       expect(tax[0]).to.be.eq(0)

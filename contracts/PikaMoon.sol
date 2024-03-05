@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.20;
+pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20CappedUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {IPikaMoon, IERC20} from "./interfaces/IPikaMoon.sol";
 import {CommanErrors} from "./libraries/Errors.sol";
-import "./interfaces/IUniswapV2Router02.sol";
 
 /**
  * @title PikaMoon Token
@@ -23,18 +20,29 @@ contract PikaMoon is
 {
     //storage
     bytes32 private constant OWNER_ROLE = keccak256("OWNER_ROLE");
+    uint32 public constant feeMultiply = 1000;
+    uint16 public constant marketingTax = 10; // 1%
+    uint16 public constant ecosystemTax = 10; // 1%
+    uint16 public constant burnTax = 5; // 0.5%
     address public ecoSystemWallet;
     address public marketingWallet;
     mapping(address => bool) public isExcludeFromTax;
     mapping(address => bool) public automatedMarketMakerPairs;
-    uint16 public marketingTax; // 1%
-    uint16 public ecosystemTax; // 1%
-    uint16 public burnTax; // 0.5%
-    uint32 public feeMultiply;
+
     bool public isTaxEnabled;
 
     // events
     event SetAutomatedMarketMakerPair(address pair, bool value);
+    event ToggleTax(bool tax);
+    event ExcludeFromTax(address _user, bool _isExcludeFromTax);
+    event EventEcoSystemWallet(
+        address ecoSystemWallet,
+        address _ecoSystemWallet
+    );
+    event EventMarketingWallet(
+        address marketingWallet,
+        address _marketingWallet
+    );
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -55,7 +63,7 @@ contract PikaMoon is
         uint _cap, // 50_000_000_000 ether
         address _ecosystemdevelopment,
         address _marketing
-    ) public initializer {
+    ) external initializer {
         __ERC20_init(_name, _symbol);
         __ERC20Capped_init(_cap);
         __AccessControl_init();
@@ -64,18 +72,14 @@ contract PikaMoon is
         _grantRole(OWNER_ROLE, _msgSender());
         _setRoleAdmin(OWNER_ROLE, OWNER_ROLE);
 
-        marketingTax = 10; // 1%
-        ecosystemTax = 10; // 1%
-        burnTax = 5; // 0.5%
-        feeMultiply = 1000;
-        isTaxEnabled = true;
-
         if (_ecosystemdevelopment == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
         if (_marketing == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
+
+        isTaxEnabled = true;
         //set marketing and ecosystem wallet
         ecoSystemWallet = _ecosystemdevelopment;
         marketingWallet = _marketing;
@@ -99,7 +103,7 @@ contract PikaMoon is
     function setAutomatedMarketMakerPair(
         address pair,
         bool value
-    ) public onlyRole(OWNER_ROLE) {
+    ) external onlyRole(OWNER_ROLE) {
         _setAutomatedMarketMakerPair(pair, value);
     }
 
@@ -134,27 +138,13 @@ contract PikaMoon is
         _mint(to, amount);
     }
 
-    /**
-     * @dev Function to burn existing tokens from a specified owner's balance.
-     * @param owner The address from which the tokens are burned.
+  /**
+     * @dev Function for user to burn there balance.
      * @param amount The amount of tokens to be burned.
      */
-    function burn(address owner, uint amount) external onlyRole(OWNER_ROLE) {
+    function burn(uint amount) external  {
         // Call the internal _burn function from ERC20 to destroy tokens
-        _burn(owner, amount);
-    }
-
-    /**
-     * @dev Function to change fee Multiply
-     * @param _feeMultiply The address to ecosystem wallet.
-     */
-    function changeFeeMultiply(
-        uint32 _feeMultiply
-    ) external onlyRole(OWNER_ROLE) {
-        if (_feeMultiply == 0) {
-            revert CommanErrors.ZeroAmount();
-        }
-        feeMultiply = _feeMultiply;
+        _burn(_msgSender(), amount);
     }
 
     /**
@@ -167,6 +157,7 @@ contract PikaMoon is
         if (_ecoSystemWallet == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
+        emit EventEcoSystemWallet(ecoSystemWallet,_ecoSystemWallet);
         ecoSystemWallet = _ecoSystemWallet;
     }
 
@@ -180,6 +171,7 @@ contract PikaMoon is
         if (_marketing == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
+        emit EventMarketingWallet(marketingWallet,_marketing);
         marketingWallet = _marketing;
     }
 
@@ -193,6 +185,7 @@ contract PikaMoon is
         bool _isExcludeFromTax
     ) external onlyRole(OWNER_ROLE) {
         isExcludeFromTax[_user] = _isExcludeFromTax;
+        emit ExcludeFromTax(_user, _isExcludeFromTax);
     }
 
     /**
@@ -200,34 +193,7 @@ contract PikaMoon is
      */
     function toggleTax() external onlyRole(OWNER_ROLE) {
         isTaxEnabled = !isTaxEnabled;
-    }
-
-    /**
-     * @dev Function to set Marketing Tax
-     * @param _marketingTax tax value
-     */
-    function setMarketingTax(
-        uint16 _marketingTax
-    ) external onlyRole(OWNER_ROLE) {
-        marketingTax = _marketingTax; // 1%
-    }
-
-    /**
-     * @dev Function to set EcoSystem Tax
-     * @param _ecosystemTax tax value
-     */
-    function setEcoSystemTax(
-        uint16 _ecosystemTax
-    ) external onlyRole(OWNER_ROLE) {
-        ecosystemTax = _ecosystemTax; // 1%
-    }
-
-    /**
-     * @dev Function to set burn Tax
-     * @param _burnTax tax value
-     */
-    function setBurnTax(uint16 _burnTax) external onlyRole(OWNER_ROLE) {
-        burnTax = _burnTax;
+        emit ToggleTax(isTaxEnabled);
     }
 
     /**
@@ -338,22 +304,17 @@ contract PikaMoon is
         )
     {
         // calculate tax
-        if (isTaxEnabled) {
-            if (automatedMarketMakerPairs[from]) {
-                // means buying from known AMM/DEX
-                tax = 0;
-            } else {
-                if (isExcludeFromTax[from] || isExcludeFromTax[to]) {
-                    // means from or to is excluded from fee
-                    tax = 0;
-                } else {
-                    burnAmount = (value * burnTax) / feeMultiply;
-                    marketingAmount = (value * marketingTax) / feeMultiply;
-                    ecosystemAmount = (value * ecosystemTax) / feeMultiply;
-                    unchecked {
-                        tax = burnAmount + marketingAmount + ecosystemAmount;
-                    }
-                }
+        if (
+            isTaxEnabled &&
+            !automatedMarketMakerPairs[from] &&
+            !isExcludeFromTax[from] &&
+            !isExcludeFromTax[to]
+        ) {
+            burnAmount = (value * burnTax) / feeMultiply;
+            marketingAmount = (value * marketingTax) / feeMultiply;
+            ecosystemAmount = (value * ecosystemTax) / feeMultiply;
+            unchecked {
+                tax = burnAmount + marketingAmount + ecosystemAmount;
             }
         }
     }
