@@ -8,5 +8,6 @@ pragma solidity ^0.8.20;
 library CommanErrors {
     error ZeroAmount();
     error ZeroAddress();
+    error WrongTax();
     error PairIsAlreadyGivenValue();
 }

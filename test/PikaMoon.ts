@@ -186,5 +186,42 @@ describe("Pikamoon token", function () {
       .calculateTax(otherAccount.address, owner.address,toWei(500));
       expect(tax[0]).to.be.eq(0)
     })
+
+
+    it("should not allow set wrong marketing tx %", async () => {
+      await expect( token.setMarketingTax(2000)).to.be.revertedWithCustomError(token,"WrongTax")
+     
+   
+    });
+    it("should not allow set wrong eco system tax %", async () => {
+      await expect( token.setEcoSystemTax(3000)).to.be.revertedWithCustomError(token,"WrongTax")
+     
+    });
+    it("should not allow set wrong burn tax %", async () => {
+      await expect( token.setBurnTax(1000)).to.be.revertedWithCustomError(token,"WrongTax")
+     
+    });
+
+    it("should set marketing tx %", async () => {
+      expect(await token.marketingTax()).to.be.equal(10);
+      await expect( token.connect(account2).setMarketingTax(20)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+     
+      await token.setMarketingTax(20);
+      expect(await token.marketingTax()).to.be.equal(20);
+    });
+    it("should set eco system tax %", async () => {
+      expect(await token.ecosystemTax()).to.be.equal(10);
+      await expect( token.connect(account2).setEcoSystemTax(30)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+     
+      await token.setEcoSystemTax(30);
+      expect(await token.ecosystemTax()).to.be.equal(30);
+    });
+    it("should set burn tax %", async () => {
+      expect(await token.burnTax()).to.be.equal(5);
+      await expect( token.connect(account2).setBurnTax(10)).to.be.revertedWithCustomError(token,"AccessControlUnauthorizedAccount")
+     
+      await token.setBurnTax(10);
+      expect(await token.burnTax()).to.be.equal(10);
+    });
   });
 });

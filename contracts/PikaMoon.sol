@@ -21,9 +21,9 @@ contract PikaMoon is
     //storage
     bytes32 private constant OWNER_ROLE = keccak256("OWNER_ROLE");
     uint32 public constant feeMultiply = 1000;
-    uint16 public constant marketingTax = 10; // 1%
-    uint16 public constant ecosystemTax = 10; // 1%
-    uint16 public constant burnTax = 5; // 0.5%
+    uint16 public marketingTax; // 1%
+    uint16 public ecosystemTax; // 1%
+    uint16 public burnTax; // 0.5%
     address public ecoSystemWallet;
     address public marketingWallet;
     mapping(address => bool) public isExcludeFromTax;
@@ -80,6 +80,9 @@ contract PikaMoon is
         }
 
         isTaxEnabled = true;
+        marketingTax = 10;
+        ecosystemTax = 10;
+        burnTax = 5;
         //set marketing and ecosystem wallet
         ecoSystemWallet = _ecosystemdevelopment;
         marketingWallet = _marketing;
@@ -138,11 +141,11 @@ contract PikaMoon is
         _mint(to, amount);
     }
 
-  /**
+    /**
      * @dev Function for user to burn there balance.
      * @param amount The amount of tokens to be burned.
      */
-    function burn(uint amount) external  {
+    function burn(uint amount) external {
         // Call the internal _burn function from ERC20 to destroy tokens
         _burn(_msgSender(), amount);
     }
@@ -157,7 +160,7 @@ contract PikaMoon is
         if (_ecoSystemWallet == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
-        emit EventEcoSystemWallet(ecoSystemWallet,_ecoSystemWallet);
+        emit EventEcoSystemWallet(ecoSystemWallet, _ecoSystemWallet);
         ecoSystemWallet = _ecoSystemWallet;
     }
 
@@ -171,7 +174,7 @@ contract PikaMoon is
         if (_marketing == address(0)) {
             revert CommanErrors.ZeroAddress();
         }
-        emit EventMarketingWallet(marketingWallet,_marketing);
+        emit EventMarketingWallet(marketingWallet, _marketing);
         marketingWallet = _marketing;
     }
 
@@ -194,6 +197,43 @@ contract PikaMoon is
     function toggleTax() external onlyRole(OWNER_ROLE) {
         isTaxEnabled = !isTaxEnabled;
         emit ToggleTax(isTaxEnabled);
+    }
+
+    /**
+     * @dev Function to set Marketing Tax
+     * @param _marketingTax tax value
+     */
+    function setMarketingTax(
+        uint16 _marketingTax
+    ) external onlyRole(OWNER_ROLE) {
+        if (burnTax + _marketingTax + ecosystemTax >= feeMultiply) {
+            revert CommanErrors.WrongTax();
+        }
+        marketingTax = _marketingTax; 
+    }
+
+    /**
+     * @dev Function to set EcoSystem Tax
+     * @param _ecosystemTax tax value
+     */
+    function setEcoSystemTax(
+        uint16 _ecosystemTax
+    ) external onlyRole(OWNER_ROLE) {
+        if (burnTax + marketingTax + _ecosystemTax >= feeMultiply) {
+            revert CommanErrors.WrongTax();
+        }
+        ecosystemTax = _ecosystemTax; 
+    }
+
+    /**
+     * @dev Function to set burn Tax
+     * @param _burnTax tax value
+     */
+    function setBurnTax(uint16 _burnTax) external onlyRole(OWNER_ROLE) {
+        if (_burnTax + marketingTax + ecosystemTax >= feeMultiply) {
+            revert CommanErrors.WrongTax();
+        }
+        burnTax = _burnTax;
     }
 
     /**
