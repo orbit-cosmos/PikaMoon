@@ -21,9 +21,9 @@ contract PikaMoon is
     //storage
     bytes32 private constant OWNER_ROLE = keccak256("OWNER_ROLE");
     uint32 public constant feeMultiply = 1000;
-    uint16 public marketingTax; // 1%
-    uint16 public ecosystemTax; // 1%
-    uint16 public burnTax; // 0.5%
+    uint16 public marketingTax; 
+    uint16 public ecosystemTax; 
+    uint16 public burnTax; 
     address public ecoSystemWallet;
     address public marketingWallet;
     mapping(address => bool) public isExcludeFromTax;
@@ -53,19 +53,17 @@ contract PikaMoon is
      * @dev Initializer function to initialize the contract.
      * @param _name The name of the token.
      * @param _symbol The symbol of the token.
-     * @param _cap Cap of token.
      * @param _ecosystemdevelopment ecosystem wallet.
      * @param _marketing marketing wallet.
      */
     function initialize(
         string memory _name, // Pikamoon
         string memory _symbol, // PIKA
-        uint _cap, // 50_000_000_000 ether
         address _ecosystemdevelopment,
         address _marketing
     ) external initializer {
         __ERC20_init(_name, _symbol);
-        __ERC20Capped_init(_cap);
+        __ERC20Capped_init(50_000_000_000 ether);
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
@@ -245,6 +243,7 @@ contract PikaMoon is
      * and marketplace, therefore we want to reward hodlers of Pikamoon by punishing those leaving our ecosystem.
      * 1% of the tax will go towards marketing, 1% towards the ecosystem development fund / P2E Rewards
      * and 0.5% burned forever!
+     * @notice these tax values are not fixed and can be changed in the future
      */
     function transfer(
         address to,
@@ -289,6 +288,7 @@ contract PikaMoon is
      * and marketplace, therefore we want to reward hodlers of Pikamoon by punishing those leaving our ecosystem.
      * 1% of the tax will go towards marketing, 1% towards the ecosystem development fund / P2E Rewards
      * and 0.5% burned forever!
+     * @notice these tax values are not fixed and can be changed in the future
      */
     function transferFrom(
         address from,

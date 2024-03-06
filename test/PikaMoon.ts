@@ -18,7 +18,6 @@ describe("Pikamoon token", function () {
       [
       "PIKAMoon",
       "PIKA",
-      toWei(50_000_000_000),
       owner.address,
       owner.address
       ],
