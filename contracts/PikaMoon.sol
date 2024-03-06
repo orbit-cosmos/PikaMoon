@@ -21,9 +21,9 @@ contract PikaMoon is
     //storage
     bytes32 private constant OWNER_ROLE = keccak256("OWNER_ROLE");
     uint32 public constant feeMultiply = 1000;
-    uint16 public marketingTax; 
-    uint16 public ecosystemTax; 
-    uint16 public burnTax; 
+    uint16 constant public marketingTax = 10; 
+    uint16 constant public ecosystemTax = 10; 
+    uint16 constant public burnTax = 5; 
     address public ecoSystemWallet;
     address public marketingWallet;
     mapping(address => bool) public isExcludeFromTax;
@@ -78,9 +78,7 @@ contract PikaMoon is
         }
 
         isTaxEnabled = true;
-        marketingTax = 10;
-        ecosystemTax = 10;
-        burnTax = 5;
+       
         //set marketing and ecosystem wallet
         ecoSystemWallet = _ecosystemdevelopment;
         marketingWallet = _marketing;
@@ -198,43 +196,6 @@ contract PikaMoon is
     }
 
     /**
-     * @dev Function to set Marketing Tax
-     * @param _marketingTax tax value
-     */
-    function setMarketingTax(
-        uint16 _marketingTax
-    ) external onlyRole(OWNER_ROLE) {
-        if (burnTax + _marketingTax + ecosystemTax >= feeMultiply) {
-            revert CommanErrors.WrongTax();
-        }
-        marketingTax = _marketingTax; 
-    }
-
-    /**
-     * @dev Function to set EcoSystem Tax
-     * @param _ecosystemTax tax value
-     */
-    function setEcoSystemTax(
-        uint16 _ecosystemTax
-    ) external onlyRole(OWNER_ROLE) {
-        if (burnTax + marketingTax + _ecosystemTax >= feeMultiply) {
-            revert CommanErrors.WrongTax();
-        }
-        ecosystemTax = _ecosystemTax; 
-    }
-
-    /**
-     * @dev Function to set burn Tax
-     * @param _burnTax tax value
-     */
-    function setBurnTax(uint16 _burnTax) external onlyRole(OWNER_ROLE) {
-        if (_burnTax + marketingTax + ecosystemTax >= feeMultiply) {
-            revert CommanErrors.WrongTax();
-        }
-        burnTax = _burnTax;
-    }
-
-    /**
      * @dev Moves a `value` amount of tokens from the caller's account to `to`.
      * @param to The address to which the tokens are being transfered.
      * @param value The amount of tokens to be transfered.
@@ -243,7 +204,6 @@ contract PikaMoon is
      * and marketplace, therefore we want to reward hodlers of Pikamoon by punishing those leaving our ecosystem.
      * 1% of the tax will go towards marketing, 1% towards the ecosystem development fund / P2E Rewards
      * and 0.5% burned forever!
-     * @notice these tax values are not fixed and can be changed in the future
      */
     function transfer(
         address to,
@@ -288,7 +248,6 @@ contract PikaMoon is
      * and marketplace, therefore we want to reward hodlers of Pikamoon by punishing those leaving our ecosystem.
      * 1% of the tax will go towards marketing, 1% towards the ecosystem development fund / P2E Rewards
      * and 0.5% burned forever!
-     * @notice these tax values are not fixed and can be changed in the future
      */
     function transferFrom(
         address from,
