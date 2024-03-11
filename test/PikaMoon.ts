@@ -5,7 +5,7 @@ import { PikaMoon } from "../typechain-types";
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 
 const ZeroAddress = ethers.ZeroAddress; 
-const toWei = (value: number) => ethers.parseEther(value.toString());
+const toWei = (value: number) => ethers.parseUnits(value.toString(),9);
 // const fromWei = (value: number) => ethers.formatEther(value);
 // const now = () => Math.floor(Date.now() / 1000);
 

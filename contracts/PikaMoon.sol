@@ -63,7 +63,7 @@ contract PikaMoon is
         address _marketing
     ) external initializer {
         __ERC20_init(_name, _symbol);
-        __ERC20Capped_init(50_000_000_000 gwei);
+        __ERC20Capped_init(50_000_000_000 * 10 ** decimals());
         __AccessControl_init();
         __UUPSUpgradeable_init();
 
